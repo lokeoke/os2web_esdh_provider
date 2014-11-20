@@ -210,13 +210,13 @@ function _os2web_esdh_provider_import_meeting($meeting_id, $force = FALSE, &$con
       $node->field_os2web_meetings_partic[LANGUAGE_NONE][0]['value'] = implode(variable_get('os2dagsorden_participants_delimeter', ', '), $meeting['participants']);
       $node->field_os2web_meetings_partic[LANGUAGE_NONE][0]['format'] ='filtered_html';
     }
- 
+
     //Adding cancelled participants
     if (isset($meeting['participants_cancellation'])){
       $node->field_os2web_meetings_particcanl[LANGUAGE_NONE][0]['value'] = implode(variable_get('os2dagsorden_participants_delimeter', ', '), $meeting['participants_cancellation']);
       $node->field_os2web_meetings_particcanl[LANGUAGE_NONE][0]['format'] ='filtered_html';
     }
-    
+
      //Adding comments
    if (isset($meeting['description'])){
       $node->field_os2web_meetings_comments[LANGUAGE_NONE][0]['value'] = $meeting['comments'];
@@ -321,7 +321,7 @@ function _os2web_esdh_provider_import_items($items) {
     $node->title = $item['title'];
     // Set some default values.
     node_object_prepare($node);
-    
+
     if (module_exists('os2dagsorden_esdh_provider')){
       $node = os2dagsorden_esdh_provider_bullet_add_number($node, $item['id']);
     }
@@ -329,7 +329,7 @@ function _os2web_esdh_provider_import_items($items) {
     if ($item['access'] === 'Lukket') {
       $node->field_os2web_meetings_bul_closed[LANGUAGE_NONE][]['value'] = 1;
       if (module_exists('os2dagsorden_esdh_provider')){
-        $node = os2dagsorden_esdh_provider_process_closed_bullet($node, $item); 
+        $node = os2dagsorden_esdh_provider_process_closed_bullet($node, $item);
       }
       node_submit($node);
       node_save($node);
@@ -438,7 +438,16 @@ function _os2web_esdh_provider_import_file($file_meta) {
   }
 
   $uri_out = $pinfo['dirname'] . '/' . _os2web_esdh_provider_sanetize_filename($fname . '.' . strtolower($pinfo['extension']));
-  $uri_pdf = $pinfo['dirname'] . '/' . _os2web_esdh_provider_sanetize_filename($fname . '.pdf');
+
+  if (_os2web_esdh_provider_similar_file_exists(drupal_realpath($uri_out))) {
+    $file_counter = 0;
+    do {
+      $uri_out = $pinfo['dirname'] . '/' . _os2web_esdh_provider_sanetize_filename($fname . '_' . $file_counter++ . '.' . strtolower($pinfo['extension']));
+    } while(_os2web_esdh_provider_similar_file_exists(drupal_realpath($uri_out)));
+  }
+
+  $new_pinfo = pathinfo($uri_out);
+  $uri_pdf = $pinfo['dirname'] . '/' . $new_pinfo['filename'] . '.pdf';
 
   err_debug('Start import file ' . $uri_out . ' ');
 
@@ -501,7 +510,7 @@ function _os2web_esdh_provider_import_file($file_meta) {
   $file->uid = 1;
   $file->status = FILE_STATUS_PERMANENT;
   $file = file_save($file);
-  
+
   if (module_exists('os2web_pdf_conversion_manager'))
     _os2web_pdf_conversion_manager_copy_file_to_convertion_dir($file->fid);
 
