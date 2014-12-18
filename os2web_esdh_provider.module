@@ -187,7 +187,12 @@ function os2web_esdh_provider_cron() {
     if ($queue->numberOfItems() == 0) {
 
       $current_timestamp = time();
-      $last_mm_import_time = variable_get('os2web_esdh_provider_last_mm_import', FALSE);
+
+      // In some cases the filecopy service will preserve the timestamps on the
+      // files. This will cause the meeting to be skipped during import.
+      // Since the import it self skips meetings already imported, we just
+      // subtract an hour, in order to get all new meetings.
+      $last_mm_import_time = variable_get('os2web_esdh_provider_last_mm_import', FALSE) - 3600;
 
       foreach ($meetings as $meeting) {
         // Only import files newer than last cron job.
@@ -208,7 +213,11 @@ function os2web_esdh_provider_queue_meetings() {
   if (os2web_esdh_provider_has_api('mm')) {
     $meetings = os2web_esdh_provider_invoke('mm', 'get_import_list');
 
-    $last_mm_import_time = variable_get('os2web_esdh_provider_last_mm_import', FALSE);
+    // In some cases the filecopy service will preserve the timestamps on the
+    // files. This will cause the meeting to be skipped during import.
+    // Since the import it self skips meetings already imported, we just
+    // subtract an hour, in order to get all new meetings.
+    $last_mm_import_time = variable_get('os2web_esdh_provider_last_mm_import', FALSE) - 3600;
 
     $queue = DrupalQueue::get('acadre_mm_import');
 
@@ -219,8 +228,6 @@ function os2web_esdh_provider_queue_meetings() {
       }
     }
     $queue->createItem(array('post_import_process' => TRUE));
-    variable_set('os2web_esdh_provider_last_mm_import', $current_timestamp);
-
     variable_set('os2web_esdh_provider_last_mm_import', time());
   }
 }
