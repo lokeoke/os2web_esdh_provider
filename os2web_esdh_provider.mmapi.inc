@@ -145,6 +145,9 @@ function _os2web_esdh_provider_import_meeting($meeting_id, $force = FALSE, &$con
       }
     }
 
+    // Allow other modules to alter meeting before node is created.
+    drupal_alter('os2web_esdh_provider_meeting', $meeting);
+
     // Or any other content type you want.
     $node->type = "os2web_meetings_meeting";
     // Or any language code if Locale module is enabled. More on this below.
