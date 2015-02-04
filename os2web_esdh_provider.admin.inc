@@ -77,7 +77,8 @@ function _os2web_esdh_provider_status() {
     }
   }
 
-  $queue_markup .= drupal_render(drupal_get_form('os2web_esdh_provider_queue_form'));
+  $queue_form = drupal_get_form('os2web_esdh_provider_queue_form');
+  $queue_markup .= drupal_render($queue_form);
   $queue_markup .= '<h3>In queue</h3>';
 
   $queue_header = array(t('Publication id:'), t('uri'), t('Force'));
@@ -283,7 +284,7 @@ function _os2web_esdh_provider_status_confirm_submit($form, &$form_state) {
 
     batch_set($batch);
     // This isn't entirely neccesary, but needed to make the redirect work.
-    variable_set('os2web_esdh_provider_last_mm_import', $current_timestamp);
+    variable_set('os2web_esdh_provider_last_mm_import', time());
     batch_process('admin/config/os2web/esdh_provider');
   }
 }
