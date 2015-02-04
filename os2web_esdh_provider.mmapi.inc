@@ -639,15 +639,20 @@ function _os2web_esdh_provider_node_tab_page($nid, $op = FALSE) {
  *   Sanetized filename with same extension.
  */
 function _os2web_esdh_provider_sanetize_filename($filename) {
-  // Replace whitespace.
-  // $filename = str_replace(' ', '_', $filename);
-  // Remove remaining unsafe characters.
-  // $filename = preg_replace('![^0-9A-Za-z_.- ]!', '', $filename);
-  $filename = preg_replace('![/"]!', '-', $filename);
-  // Remove multiple consecutive non-alphabetical characters.
-  $filename = preg_replace('/(_)_+|(\.)\.+|(-)-+/', '\\1\\2\\3', $filename);
-  // Force lowercase to prevent issues on case-insensitive file systems.
-  // $filename = strtolower($filename);
+  if (module_exists('transliteration')) {
+    $filename = transliteration_clean_filename($filename);
+  }
+  else {
+    // Replace whitespace.
+    // $filename = str_replace(' ', '_', $filename);
+    // Remove remaining unsafe characters.
+    // $filename = preg_replace('![^0-9A-Za-z_.- ]!', '', $filename);
+    $filename = preg_replace('![/"]!', '-', $filename);
+    // Remove multiple consecutive non-alphabetical characters.
+    $filename = preg_replace('/(_)_+|(\.)\.+|(-)-+/', '\\1\\2\\3', $filename);
+    // Force lowercase to prevent issues on case-insensitive file systems.
+    // $filename = strtolower($filename);
+  }
   $pi = pathinfo($filename);
   if (isset($pi['extension'])) {
     return substr(trim($pi['filename']), 0, 160) . '.' . $pi['extension'];
