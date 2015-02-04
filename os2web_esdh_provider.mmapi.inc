@@ -173,7 +173,8 @@ function _os2web_esdh_provider_import_meeting($meeting_id, $force = FALSE, &$con
       // Setting the new title with committee name and meeting date substring.
       $my_date = date_create(substr($meeting['meeting_date_start'], 0, 10));
       $format = "d-m-Y";
-      $node->title = $meeting['committee'] . ' - ' . date_format($my_date, $format);
+      $committee_name = is_array($meeting['committee']) ? $meeting['committee']['esdh_name'] : $meeting['committee'];
+      $node->title = $committee_name . ' - ' . date_format($my_date, $format);
 
       $alias = 'dagsorden/' . pathauto_cleanstring($node->title);
       $source = (isset($node->nid)) ? 'node/' . $node->nid : '';
@@ -534,8 +535,9 @@ function _os2web_esdh_provider_import_file($file_meta) {
 /**
  * Imports a termname into a vacabulary. Does dupe check.
  *
- * @param string $term_name
- *   Term machine name
+ * @param mixed $term_name
+ *   Term name, or array containing term name and ESDH ID for the term.
+ *
  * @param string $vocab
  *   Vocabulary machine name
  *
@@ -543,6 +545,15 @@ function _os2web_esdh_provider_import_file($file_meta) {
  *   Drupal standard Term object
  */
 function _acadre_esdh_import_term($term_name, $vocab) {
+  // Some MM plugins provide both term name and the ESDH ID for the
+  // term. The latter makes it possible to handle multiple terms with
+  // same name and automatically updating of term names based on data
+  // from the ESDH system.
+  if (is_array($term_name)) {
+    $term_esdh_id = $term_name['esdh_id'];
+    $term_esdh_id_field = $term_name['esdh_id_field'];
+    $term_name = $term_name['esdh_name'];
+  }
 
   err_debug('Start import term');
 
@@ -558,15 +569,33 @@ function _acadre_esdh_import_term($term_name, $vocab) {
   $term->vid = $vid;
   $term->name = $term_name;
 
-  $tid = db_select('taxonomy_term_data', 'td')
-          ->fields('td', array('tid'))
-          ->condition('name', $term->name)
-          ->condition('vid', $term->vid)
-          ->execute()->fetchObject();
+  // Searching for an existing term based on the provided ESDH ID.
+  if (!empty($term_esdh_id_field) && !empty($term_esdh_id) && $term_esdh_id > 0) {
+    $term->{$term_esdh_id_field}[und][0][value] = $term_esdh_id;
+
+    $query = new EntityFieldQuery();
+    $result = $query->entityCondition('entity_type', 'taxonomy_term')
+      ->propertyCondition('vid', $vid)
+      ->fieldCondition($term_esdh_id_field, 'value', $term_esdh_id, '=')
+      ->execute();
+    if (isset($result['taxonomy_term'])) {
+      $tid = array_shift($result['taxonomy_term']);
+    }
+  }
+  // If no ESDH ID is provided are we falling back and selecting on the
+  // term name.
+  else if (!empty($tid)) {
+    $tid = db_select('taxonomy_term_data', 'td')
+      ->fields('td', array('tid'))
+      ->condition('name', $term->name)
+      ->condition('vid', $term->vid)
+      ->execute()->fetchObject();
+  }
 
   if (isset($tid->tid) && $tid->tid > 0) {
     $term->tid = (int) $tid->tid;
   }
+  
   taxonomy_term_save($term);
 
   return $term;
