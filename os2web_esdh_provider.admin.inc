@@ -77,7 +77,8 @@ function _os2web_esdh_provider_status() {
     }
   }
 
-  $queue_markup .= drupal_render(drupal_get_form('os2web_esdh_provider_queue_form'));
+  $queue_form = drupal_get_form('os2web_esdh_provider_queue_form');
+  $queue_markup .= drupal_render($queue_form);
   $queue_markup .= '<h3>In queue</h3>';
 
   $queue_header = array(t('Publication id:'), t('uri'), t('Force'));
@@ -253,6 +254,7 @@ function _os2web_esdh_provider_status_confirm_submit($form, &$form_state) {
   );
 
   $meetings = os2web_esdh_provider_invoke('mm', 'get_import_list');
+  $current_timestamp = time();
 
   if (variable_get('os2web_esdh_provider_queue_enabled', FALSE)) {
     $queue = DrupalQueue::get('acadre_mm_import');
