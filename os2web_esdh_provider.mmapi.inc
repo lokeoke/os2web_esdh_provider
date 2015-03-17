@@ -191,7 +191,7 @@ function _os2web_esdh_provider_import_meeting($meeting_id, $force = FALSE, &$con
       $node->path = $path_alias;
     }
 
-    $node->field_os2web_meetings_abbr[LANGUAGE_NONE][0]['value'] = substr($meeting['description'], 0, 49);
+    $node->field_os2web_meetings_abbr[LANGUAGE_NONE][0]['value'] = mb_substr($meeting['description'], 0, 49);
     // If field has a format, you need to define it. Here we define a default
     // filtered_html format for a body field.
     $node->field_os2web_meetings_abbr[LANGUAGE_NONE][0]['format'] = 'filtered_html';
@@ -639,15 +639,20 @@ function _os2web_esdh_provider_node_tab_page($nid, $op = FALSE) {
  *   Sanetized filename with same extension.
  */
 function _os2web_esdh_provider_sanetize_filename($filename) {
-  // Replace whitespace.
-  // $filename = str_replace(' ', '_', $filename);
-  // Remove remaining unsafe characters.
-  // $filename = preg_replace('![^0-9A-Za-z_.- ]!', '', $filename);
-  $filename = preg_replace('![/"]!', '-', $filename);
-  // Remove multiple consecutive non-alphabetical characters.
-  $filename = preg_replace('/(_)_+|(\.)\.+|(-)-+/', '\\1\\2\\3', $filename);
-  // Force lowercase to prevent issues on case-insensitive file systems.
-  // $filename = strtolower($filename);
+  if (module_exists('transliteration')) {
+    $filename = transliteration_clean_filename($filename);
+  }
+  else {
+    // Replace whitespace.
+    // $filename = str_replace(' ', '_', $filename);
+    // Remove remaining unsafe characters.
+    // $filename = preg_replace('![^0-9A-Za-z_.- ]!', '', $filename);
+    $filename = preg_replace('![/"]!', '-', $filename);
+    // Remove multiple consecutive non-alphabetical characters.
+    $filename = preg_replace('/(_)_+|(\.)\.+|(-)-+/', '\\1\\2\\3', $filename);
+    // Force lowercase to prevent issues on case-insensitive file systems.
+    // $filename = strtolower($filename);
+  }
   $pi = pathinfo($filename);
   if (isset($pi['extension'])) {
     return substr(trim($pi['filename']), 0, 160) . '.' . $pi['extension'];
