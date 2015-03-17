@@ -107,7 +107,7 @@ function _os2web_esdh_provider_import_meeting($meeting_id, $force = FALSE, &$con
     // Either republish, delete or skip.
     if ($nid) {
 
-      if ($force) {
+      if ($force || (defined('MM_REPUBLISH_MEETINGS') && MM_REPUBLISH_MEETINGS)) {
         err_debug('Republish nid: ' . $nid);
 
         $node = node_load($nid);
