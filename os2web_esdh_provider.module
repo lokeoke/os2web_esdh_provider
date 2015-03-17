@@ -208,6 +208,7 @@ function os2web_esdh_provider_queue_meetings() {
   if (os2web_esdh_provider_has_api('mm')) {
     $meetings = os2web_esdh_provider_invoke('mm', 'get_import_list');
 
+    $current_timestamp = time();
     $last_mm_import_time = variable_get('os2web_esdh_provider_last_mm_import', FALSE);
 
     $queue = DrupalQueue::get('acadre_mm_import');
@@ -220,8 +221,6 @@ function os2web_esdh_provider_queue_meetings() {
     }
     $queue->createItem(array('post_import_process' => TRUE));
     variable_set('os2web_esdh_provider_last_mm_import', $current_timestamp);
-
-    variable_set('os2web_esdh_provider_last_mm_import', time());
   }
 }
 
