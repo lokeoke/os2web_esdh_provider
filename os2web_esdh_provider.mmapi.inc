@@ -104,27 +104,43 @@ function _os2web_esdh_provider_import_meeting($meeting_id, $force = FALSE, &$con
     err_debug('Importing meeting with ' . count($meeting['items']) . ' bullet points.');
 
     // Meeting already exist.
-    // Either republish, delete or skip.
+    // Either update, republish, delete or skip.
     if ($nid) {
 
-      if ($force || (defined('MM_REPUBLISH_MEETINGS') && MM_REPUBLISH_MEETINGS)) {
-        err_debug('Republish nid: ' . $nid);
+      $node = node_load($nid);
+      $republish = FALSE;
 
-        $node = node_load($nid);
-        watchdog('acadre MM', 'Using %nid for import.', array('%nid' => $nid), WATCHDOG_DEBUG);
+      // Republish by Force.
+      if ($force) {
+        $republish = TRUE;
+        $reason = 'FORCE';
       }
+
+      // Republish by setting.
+      if (defined('MM_REPUBLISH_MEETINGS') && MM_REPUBLISH_MEETINGS) {
+        $republish = TRUE;
+        $reason = 'MM_REPUBLISH_MEETINGS';
+      }
+
+      // Republish if meeting_sub_id changed.
+      if (defined('MM_REPUBLISH_SUBVERSION') && MM_REPUBLISH_SUBVERSION) {
+        if ($node->field_os2web_meetings_sub_id[LANGUAGE_NONE][0]['value'] !== $meeting['meeting_sub_id']) {
+          $republish = TRUE;
+          $reason = 'MM_REPUBLISH_SUBVERSION';
+        }
+      }
+
       // Republish if current meeting is of type Referat.
       // This means that the one already exist is a Dagsorden.
-      elseif ($meeting['type'] === 'Referat') {
-        $node = node_load($nid);
-        if ($node->field_os2web_meetings_type[LANGUAGE_NONE][0]['value'] !== 'Dagsorden') {
-          err_debug('Skipping nid: ' . $nid);
-          watchdog('acadre MM', 'Meeting already imported in %nid. Skipṕing.', array('%nid' => $nid), WATCHDOG_DEBUG);
-          lock_release(__FUNCTION__ . $meeting_id['id']);
-          return;
-        }
-        err_debug('Republish nid: ' . $nid);
-        watchdog('acadre MM', 'Using %nid for import. Type mismatch.', array('%nid' => $nid), WATCHDOG_DEBUG);
+      if ($meeting['type'] === 'Referat' && $node->field_os2web_meetings_type[LANGUAGE_NONE][0]['value'] === 'Dagsorden') {
+        $republish = TRUE;
+        $reason = 'DAGSORDEN -> REFERAT';
+      }
+
+      // Republish.
+      if ($republish) {
+        err_debug('Republish nid: ' . $nid . ' - Reason: ' . $reason);
+        watchdog('acadre MM', 'Using %nid for import. Reason: %reason', array('%nid' => $nid, '%reason' => $reason), WATCHDOG_DEBUG);
       }
       else {
         // Meeting already exists. Skip it.
