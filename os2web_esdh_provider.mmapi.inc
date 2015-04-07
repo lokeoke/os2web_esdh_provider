@@ -124,7 +124,7 @@ function _os2web_esdh_provider_import_meeting($meeting_id, $force = FALSE, &$con
 
       // Republish if meeting_sub_id changed.
       if (defined('MM_REPUBLISH_SUBVERSION') && MM_REPUBLISH_SUBVERSION) {
-        if ($node->field_os2web_meetings_sub_id[LANGUAGE_NONE][0]['value'] !== $meeting['meeting_sub_id']) {
+        if ($node->field_os2web_meetings_sub_id[LANGUAGE_NONE][0]['value'] != $meeting['meeting_sub_id']) {
           $republish = TRUE;
           $reason = 'MM_REPUBLISH_SUBVERSION';
         }
@@ -503,7 +503,7 @@ function _os2web_esdh_provider_import_file($file_meta) {
     return FALSE;
   }
 
-  if (file_uri_scheme($uri) != 'public') {
+  if (!(defined('MM_USE_ALTERNATIVE_FILE_URI_SCHEME') && MM_USE_ALTERNATIVE_FILE_URI_SCHEME) && file_uri_scheme($uri) != 'public') {
     watchdog('acadre MM', 'Invalid scheme for uri %uri, Possibly absolut path ? ' . $uri, array(
       '%uri', $uri), WATCHDOG_ERROR);
     error_log("Var: \$uri = " . print_r($uri, 1));
